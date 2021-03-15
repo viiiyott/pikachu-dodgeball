@@ -1,0 +1,32 @@
+{
+  "name": "pikachudodgeball",
+  "version": "1.0.0",
+  "description": "test",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/viiiyott/pikachu-dodgeball.git"
+  },
+  "keywords": [
+    "pikachu"
+  ],
+  "author": "viiiyott",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/viiiyott/pikachu-dodgeball/issues"
+  },
+  "homepage": "https://github.com/viiiyott/pikachu-dodgeball#readme",
+  "dependencies": {
+    "pixi-sound": "^3.0.5",
+    "pixi.js-legacy": "^5.3.3"
+  },
+  "type": "module",
+  "devDependencies": {
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12"
+  }
+}
