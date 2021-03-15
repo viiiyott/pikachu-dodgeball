@@ -4,7 +4,7 @@
 'use strict';
 
 export const ASSETS_PATH = {
-  SPRITE_SHEET: '../src/assets/images/sprite_sheet.json',
+  SPRITE_SHEET: '/pikachu-dodgeball/src/assets/images/sprite_sheet.json',
   TEXTURES: {},
   SOUNDS: {},
 };
