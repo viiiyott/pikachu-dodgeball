@@ -6,9 +6,14 @@ https://viiiyott.github.io/pikachu-dodgeball/ 에서 피카츄 피구를 플레�
 
 <img src="/screenshot.png" width="640">
 
-## 조작법과 규칙
+## 조작법
 
-<img src="/control.png" width="548">
+#### 1P
+
+- `D` `G`: 좌우 이동
+- `R` 점프
+
+## 규칙
 
 #### 잡기
 
