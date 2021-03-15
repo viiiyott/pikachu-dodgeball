@@ -72,6 +72,17 @@ setUpInitialUI();
  */
 function setUpInitialUI() {
 
+  const loadingBox = document.getElementById('loading-box');
+  const progressBar = document.getElementById('progress-bar');
+  loader.onProgress.add(() => {
+    progressBar.style.width = `${loader.progress}%`;
+  });
+  loader.onComplete.add(() => {
+    if (!loadingBox.classList.contains('hidden')) {
+      loadingBox.classList.add('hidden');
+    }
+  });
+
   /*const gameDropdownBtn = document.getElementById('game-dropdown-btn');
   const optionsDropdownBtn = document.getElementById('options-dropdown-btn');
   // @ts-ignore
