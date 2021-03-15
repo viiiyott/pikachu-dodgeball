@@ -4,4 +4,4 @@
 
 https://viiiyott.github.io/pikachu-dodgeball/ 에서 피카츄 피구를 플레이 할 수 있습니다.
 
-![screenshot](https://user-images.githubusercontent.com/79948079/111104315-be0ad600-8593-11eb-91a9-cfd8f7275e4a.png)
+<img src="/screenshot.png" width="864">
