@@ -368,7 +368,7 @@ function physicsEngine(player1, player2, ball, userInputArray) {
     );
     if (is_happend === true) {
       if (player.isCollisionWithBallHappened === false) {
-        if(player.isComputer && (ball.thrower !== 2 - i || rand() % 5 > 0)) {
+        if(player.isComputer && (ball.thrower !== 2 - i || rand() % 4 > 0)) {
           ball.thrower = 0;
           //ball.isPowerHit = false;
           player.holding = true;
