@@ -368,13 +368,13 @@ function physicsEngine(player1, player2, ball, userInputArray) {
     );
     if (is_happend === true) {
       if (player.isCollisionWithBallHappened === false) {
-        if(player.isComputer && (ball.thrower !== 2 - i || rand() % 4 > 0)) {
+        if(player.isComputer && (ball.thrower !== 2 - i || rand() % 3 > 0)) {
           ball.thrower = 0;
           //ball.isPowerHit = false;
           player.holding = true;
         } else {
           if(player.state === 2) {
-            if(ball.thrower === 2 - i && player.delayBeforeNextFrame <= 6) {
+            if(ball.thrower === 2 - i && player.delayBeforeNextFrame <= 5) {
               playerTouchingBall = i + 1;
               ball.sound.ballTouchesGround = true;
             } else {
