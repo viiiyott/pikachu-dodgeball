@@ -374,7 +374,7 @@ function physicsEngine(player1, player2, ball, userInputArray) {
           player.holding = true;
         } else {
           if(player.state === 2) {
-            if(ball.thrower === 2 - i && player.delayBeforeNextFrame <= 5) {
+            if(ball.thrower === 2 - i && player.delayBeforeNextFrame <= 6) {
               playerTouchingBall = i + 1;
               ball.sound.ballTouchesGround = true;
             } else {
