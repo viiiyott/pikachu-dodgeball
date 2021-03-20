@@ -1,0 +1,5 @@
+*.docx
+*.pptx
+control.png
+/node_modules
+/old
