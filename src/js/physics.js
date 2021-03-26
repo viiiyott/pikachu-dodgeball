@@ -36,6 +36,9 @@ const GROUND_HALF_WIDTH = GROUND_WIDTH / 2;
 /** @constant @type {number} player (Pikachu) length: width = height = 64 */
 const PLAYER_LENGTH = 64;
 /** @constant @type {number} player half length */
+const PLAYER_HALF_LENGTH_X = 12;
+const PLAYER_HALF_LENGTH_Y = 20;
+
 const PLAYER_HALF_LENGTH = PLAYER_LENGTH / 2;
 /** @constant @type {number} player's y coordinate when they are touching ground */
 const PLAYER_TOUCHING_GROUND_Y_COORD = 244;
@@ -317,6 +320,7 @@ function physicsEngine(player1, player2, ball, userInputArray) {
   const isBallTouchingGround = processCollisionBetweenBallAndWorldAndSetBallPosition(
     ball
   );
+
   if(isBallTouchingGround) {
     ball.thrower = 0;
   }
@@ -418,14 +422,18 @@ function physicsEngine(player1, player2, ball, userInputArray) {
  * @return {boolean}
  */
 function isCollisionBetweenBallAndPlayerHappened(ball, playerX, playerY) {
-  let diff = ball.x - playerX;
-  if (Math.abs(diff) <= PLAYER_HALF_LENGTH) {
-    diff = ball.y - playerY;
-    if (Math.abs(diff) <= PLAYER_HALF_LENGTH) {
-      return true;
-    }
-  }
-  return false;
+  playerX = playerX > GROUND_HALF_WIDTH ? playerX - 8 : playerX + 8
+
+  let diffX = Math.abs(playerX - ball.x)
+  let diffY = Math.abs(playerY - ball.y)
+
+  if (diffX > PLAYER_HALF_LENGTH_X + BALL_RADIUS) { return false; }
+  if (diffY > PLAYER_HALF_LENGTH_Y + BALL_RADIUS) { return false; }
+
+  if (diffX <= PLAYER_HALF_LENGTH_X) { return true; }
+  if (diffY <= PLAYER_HALF_LENGTH_Y) { return true; }
+
+  return (diffX - PLAYER_HALF_LENGTH_X) ** 2 + (diffY - PLAYER_HALF_LENGTH_Y) ** 2 <= BALL_RADIUS ** 2;
 }
 
 function didPlayerCatchedBall(ball, playerX, playerY, isPlayer2) {
