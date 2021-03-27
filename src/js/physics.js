@@ -455,19 +455,6 @@ function isCollisionBetweenBallAndPlayerHappened(ball, playerX, playerY, playerS
   }
 }
 
-function didPlayerCatchedBall(ball, playerX, playerY, isPlayer2) {
-  let diff = ball.y - playerY;
-  if (Math.abs(diff) <= PLAYER_HALF_LENGTH) {
-    if(isPlayer2 && ball.x <= playerX && ball.x + PLAYER_HALF_LENGTH * 3 / 4 >= playerX) {
-      return true;
-    }
-    if(!isPlayer2 && ball.x >= playerX && ball.x - PLAYER_HALF_LENGTH * 3 / 4 <= playerX) {
-      return true;
-    }
-  }
-  return false;
-}
-
 /**
  * FUN_00402dc0
  * Process collision between ball and world and set ball position
