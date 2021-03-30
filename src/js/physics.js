@@ -293,7 +293,7 @@ class Ball {
       this.x = GROUND_WIDTH - 56;
     }
     /** @type {number} y coord */
-    this.y = 0; // 0x34   // initialized to 0*/
+    this.y = PLAYER_TOUCHING_GROUND_Y_COORD; // 0x34   // initialized to 0*/
     /** @type {number} x direction velocity */
     this.xVelocity = 0; // 0x38  // initialized to 0
     /** @type {number} y directin velicity */
@@ -404,6 +404,19 @@ function physicsEngine(player1, player2, ball, userInputArray) {
       }
     } else {
       player.isCollisionWithBallHappened = false;
+    }
+
+    if(player.holding && i === 0) {
+      ball.x = player.x + 20;
+      ball.y = player.y;
+      ball.xVelocity = 5;
+      ball.yVelocity = 0;
+    }
+    if(player.holding && i === 1) {
+      ball.x = player.x - 20;
+      ball.y = player.y;
+      ball.xVelocity = -5;
+      ball.yVelocity = 0;
     }
   }
 
@@ -715,6 +728,7 @@ function processPlayerMovementAndSetPlayerPosition(
 
   if(player.holding) {
     if(userInput.powerHit) {
+      let st = player.state;
       player.state = 2;
       player.frameNumber = 0;
       ball.thrower = player.isPlayer2 ? 2 : 1;
@@ -725,6 +739,8 @@ function processPlayerMovementAndSetPlayerPosition(
         player.state
       );
       player.holding = false;
+      player.state = st;
+      player.frameNumber = 0;
     }
   }
 

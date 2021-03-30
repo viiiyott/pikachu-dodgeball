@@ -485,18 +485,6 @@ export class GameView {
     this.player1.gotoAndStop(frameNumber1);
     this.player2.gotoAndStop(frameNumber2);
 
-    if(player1.holding) {
-      ball.x = player1.x + 20;
-      ball.y = player1.y;
-      ball.xVelocity = 5;
-      ball.yVelocity = 0;
-    }
-    if(player2.holding) {
-      ball.x = player2.x - 20;
-      ball.y = player2.y;
-      ball.xVelocity = -5;
-      ball.yVelocity = 0;
-    }
     this.ball.x = ball.x;
     this.ball.y = ball.y;
     this.shadows.forBall.x = ball.x;
@@ -528,9 +516,14 @@ export class GameView {
     }
 
     if (ball.thrower === 0) {
-      this.ball.alpha = 0.5;
+      this.ball.alpha = 0.6;
     } else {
       this.ball.alpha = 1.0;
+    }
+
+    const holdingFrame = Math.max(player1.holdingFrame, player2.holdingFrame);
+    if (holdingFrame > 0 && holdingFrame < 50) {
+      this.ball.alpha = holdingFrame / 100 + 0.1;
     }
   }
 
