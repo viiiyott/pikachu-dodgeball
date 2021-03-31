@@ -6,10 +6,13 @@
     <title>피카츄 피구 v1.0</title>
     <link rel="icon" type="image/png" sizes="32x32" href="resources/assets/images/IDI_PIKAICON-0.png">
     <link rel="stylesheet" href="src/style.css" />
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="manifest.json">
     <script>
+      const ROOT_PATH = (process.env.NODE_ENV==="development")
+            ? "/"
+            : "/pikachu-dodgeball/";
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register(ROOT_PATH + 'sw.js')
         .then((reg) => {
             console.log('Registration succeeded');
         }).catch((error) => {
