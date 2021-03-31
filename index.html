@@ -3,9 +3,20 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Pikachu Dodgeball Demo</title>
+    <title>피카츄 피구 v1.0</title>
     <link rel="icon" type="image/png" sizes="32x32" href="resources/assets/images/IDI_PIKAICON-0.png">
     <link rel="stylesheet" href="src/style.css" />
+    <link rel="manifest" href="/manifest.json">
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+        .then((reg) => {
+            console.log('Registration succeeded');
+        }).catch((error) => {
+            console.log('Registration failed with ' + error);
+        });
+      }
+  </script>
   </head>
   <body style>
     <div id="flex-container">
@@ -101,11 +112,24 @@
                   </button>
                 </div>
               </div>
+              <div class="relative-container">
+                <button id="deuce-submenu-btn" class="btn submenu-btn">
+                  듀스 &#9654;&#xfe0e;
+                </button>
+                <div id="deuce-submenu" class="submenu">
+                  <button id="deuce-on-btn" class="btn selected">
+                    <span class="check">&check; </span>켜기
+                  </button>
+                  <button id="deuce-off-btn" class="btn">
+                    <span class="check">&check; </span>끄기
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
         <div class="btn-container right">
-          <button id="about-btn" class="btn" onclick="window.open('https://github.com/viiiyott/pikachu-dodgeball/blob/main/README.md')">게임 소개</button>
+          <button id="about-btn" class="btn" onclick="window.open('https://github.com/viiiyott/pikachu-dodgeball/blob/main/README.md')">도움말</button>
         </div>
       </div>
       <div id="game-canvas-container">

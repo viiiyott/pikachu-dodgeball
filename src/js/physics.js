@@ -211,6 +211,8 @@ class Player {
       this.holding = true;
     }
 
+    this.powerHitOnGround = -1;
+
     /**
      * This value is initialized to (_rand() % 5) before the start of every round.
      * The greater the number, the bolder the computer player.
@@ -359,8 +361,10 @@ function physicsEngine(player1, player2, ball, userInputArray) {
   for (let i = 0; i < 2; i++) {
     if (i === 0) {
       player = player1;
+      theOtherPlayer = player2;
     } else {
       player = player2;
+      theOtherPlayer = player1;
     }
 
     // FUN_00402810 ommited: this javascript code is refactored not to need this function
@@ -373,16 +377,16 @@ function physicsEngine(player1, player2, ball, userInputArray) {
     );
     if (is_happend === true) {
       if (player.isCollisionWithBallHappened === false) {
-        if(player.isComputer && (ball.thrower !== 2 - i || rand() % 3 > 0)) {
+        if(player.isComputer && !theOtherPlayer.holding && (ball.thrower !== 2 - i || rand() % 3 > 0)) {
           ball.thrower = 0;
           //ball.isPowerHit = false;
           player.holding = true;
         } else {
-          if(player.state === 2) {
+          if (player.state === 2) {
             if(ball.thrower === 2 - i && player.delayBeforeNextFrame <= 5) {
               playerTouchingBall = i + 1;
               ball.sound.ballTouchesGround = true;
-            } else {
+            } else if (!theOtherPlayer.holding) {
               ball.thrower = 0;
               //ball.isPowerHit = false;
               player.holding = true;
@@ -596,6 +600,10 @@ function processPlayerMovementAndSetPlayerPosition(
     player.holdingFrame = -128;
   }
 
+  if(player.powerHitOnGround > 0) {
+    player.powerHitOnGround -= 1;
+  }
+
   // if player is lying down.. don't move
   if (player.state === 4) {
     player.lyingDownDurationLeft += -1;
@@ -645,6 +653,7 @@ function processPlayerMovementAndSetPlayerPosition(
     player.yVelocity = -16;
     player.state = 1;
     player.frameNumber = 0;
+    player.powerHitOnGround = -1;
     // maybe-stereo-sound function FUN_00408470 (0x90) ommited:
     // refer a detailed comment above about this function
     // maybe-sound code function (playerpointer + 0x90 + 0x10)? ommited
@@ -670,11 +679,12 @@ function processPlayerMovementAndSetPlayerPosition(
   player.y = futurePlayerY;
   if (futurePlayerY < PLAYER_TOUCHING_GROUND_Y_COORD) {
     player.yVelocity += 1;
-  } else if (futurePlayerY > PLAYER_TOUCHING_GROUND_Y_COORD) {
+  } else if (futurePlayerY > PLAYER_TOUCHING_GROUND_Y_COORD || (futurePlayerY == PLAYER_TOUCHING_GROUND_Y_COORD && player.powerHitOnGround == 0)) {
     // if player is landing..
     player.yVelocity = 0;
     player.y = PLAYER_TOUCHING_GROUND_Y_COORD;
     player.frameNumber = 0;
+    player.powerHitOnGround = -1;
     if (player.state === 3 || player.state === 7) {
       // if player is diving..
       player.state = 4;
@@ -691,6 +701,9 @@ function processPlayerMovementAndSetPlayerPosition(
       // if player is jumping..
       // then player do power hit!
       player.delayBeforeNextFrame = 8;
+      if(player.state === 0) {
+        player.powerHitOnGround = 8;
+      }
       player.frameNumber = 0;
       player.state = 2;
       // maybe-sound function (playerpointer + 0x90 + 0x18)? ommited

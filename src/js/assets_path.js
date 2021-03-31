@@ -3,8 +3,12 @@
  */
 'use strict';
 
+const ROOT_PATH = (process.env.NODE_ENV==="development")
+    ? "/src"
+    : "/pikachu-dodgeball/src";
+
 export const ASSETS_PATH = {
-  SPRITE_SHEET: '/pikachu-dodgeball/src/assets/images/sprite_sheet.json',
+  SPRITE_SHEET: ROOT_PATH + '/assets/images/sprite_sheet.json',
   TEXTURES: {},
   SOUNDS: {},
 };
@@ -32,6 +36,7 @@ TEXTURES.WAVE = 'objects/wave.png';
 
 TEXTURES.SACHISOFT = 'messages/common/sachisoft.png';
 TEXTURES.READY = 'messages/common/ready.png';
+TEXTURES.DEUCE = 'messages/common/deuce.png';
 TEXTURES.GAME_END = 'messages/common/game_end.png';
 
 TEXTURES.MARK = 'messages/ko/mark.png';
@@ -45,11 +50,11 @@ TEXTURES.GAME_START = 'messages/ko/game_start.png';
 TEXTURES.SITTING_PIKACHU = 'sitting_pikachu.png';
 
 const SOUNDS = ASSETS_PATH.SOUNDS;
-SOUNDS.BGM = '/pikachu-dodgeball/src/assets/sounds/bgm.mp3';
-SOUNDS.PIPIKACHU = '/pikachu-dodgeball/src/assets/sounds/WAVE140_1.wav';
-SOUNDS.PIKA = '/pikachu-dodgeball/src/assets/sounds/WAVE141_1.wav';
-SOUNDS.CHU = '/pikachu-dodgeball/src/assets/sounds/WAVE142_1.wav';
-SOUNDS.PI = '/pikachu-dodgeball/src/assets/sounds/WAVE143_1.wav';
-SOUNDS.PIKACHU = '/pikachu-dodgeball/src/assets/sounds/WAVE144_1.wav';
-SOUNDS.POWERHIT = '/pikachu-dodgeball/src/assets/sounds/WAVE145_1.wav';
-SOUNDS.BALLTOUCHESGROUND = '/pikachu-dodgeball/src/assets/sounds/WAVE146_1.wav';
+SOUNDS.BGM = ROOT_PATH + '/assets/sounds/bgm.mp3';
+SOUNDS.PIPIKACHU = ROOT_PATH + '/assets/sounds/WAVE140_1.wav';
+SOUNDS.PIKA = ROOT_PATH + '/assets/sounds/WAVE141_1.wav';
+SOUNDS.CHU = ROOT_PATH + '/assets/sounds/WAVE142_1.wav';
+SOUNDS.PI = ROOT_PATH + '/assets/sounds/WAVE143_1.wav';
+SOUNDS.PIKACHU = ROOT_PATH + '/assets/sounds/WAVE144_1.wav';
+SOUNDS.POWERHIT = ROOT_PATH + '/assets/sounds/WAVE145_1.wav';
+SOUNDS.BALLTOUCHESGROUND = ROOT_PATH + '/assets/sounds/WAVE146_1.wav';

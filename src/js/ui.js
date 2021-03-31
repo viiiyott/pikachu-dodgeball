@@ -329,6 +329,19 @@ function setUpBtns(pikaVolley, ticker) {
     pikaVolley.isPracticeMode = false;
   });
 
+  const deuceOnBtn = document.getElementById('deuce-on-btn');
+  const deuceOffBtn = document.getElementById('deuce-off-btn');
+  deuceOnBtn.addEventListener('click', () => {
+    deuceOffBtn.classList.remove('selected');
+    deuceOnBtn.classList.add('selected');
+    pikaVolley.isDeuce = true;
+  });
+  deuceOffBtn.addEventListener('click', () => {
+    deuceOnBtn.classList.remove('selected');
+    deuceOffBtn.classList.add('selected');
+    pikaVolley.isDeuce = false;
+  });
+
   /*const aboutBox = document.getElementById('about-box');
   const closeAboutBtn = document.getElementById('close-about-btn');
   aboutBtn.addEventListener('click', () => {
@@ -411,6 +424,11 @@ function setUpToShowDropdownsAndSubmenus(pikaVolley) {
     .addEventListener('mouseover', () => {
       showSubmenu('practice-mode-submenu-btn', 'practice-mode-submenu');
     });
+  document
+    .getElementById('deuce-submenu-btn')
+    .addEventListener('mouseover', () => {
+      showSubmenu('deuce-submenu-btn', 'deuce-submenu');
+    });
 
   // set up to show submenus on click event
   // (it is for touch device equipped with physical keyboard)
@@ -432,6 +450,11 @@ function setUpToShowDropdownsAndSubmenus(pikaVolley) {
     .getElementById('practice-mode-submenu-btn')
     .addEventListener('click', () => {
       showSubmenu('practice-mode-submenu-btn', 'practice-mode-submenu');
+    });
+  document
+    .getElementById('deuce-submenu-btn')
+    .addEventListener('click', () => {
+      showSubmenu('deuce-submenu-btn', 'deuce-submenu');
     });
 }
 
