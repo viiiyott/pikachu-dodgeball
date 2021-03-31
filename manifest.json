@@ -3,12 +3,12 @@
     "name": "피카츄 피구",
     "icons": [
       {
-        "src": "/src/assets/images/IDI_PIKAICON-1_gap_filled_192.png",
+        "src": "./src/assets/images/IDI_PIKAICON-1_gap_filled_192.png",
         "type": "image/png",
         "sizes": "192x192"
       },
       {
-        "src": "/src/assets/images/IDI_PIKAICON-1_gap_filled_512.png",
+        "src": "./src/assets/images/IDI_PIKAICON-1_gap_filled_512.png",
         "type": "image/png",
         "sizes": "512x512"
       }
