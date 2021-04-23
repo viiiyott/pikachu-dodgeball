@@ -1,5 +1,7 @@
 *.docx
 *.pptx
 control.png
+install.png
+*.mp4
 /node_modules
 /old

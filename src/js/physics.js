@@ -110,7 +110,6 @@ export class PikaUserInput {
     this.yDirection = 0;
     /** @type {number} 0: auto-repeated or no power hit input, 1: not auto-repeated power hit input */
     this.powerHit = 0;
-    this.powerKeyDown = false;
   }
 }
 
