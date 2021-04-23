@@ -80,6 +80,14 @@
 	"spriteSourceSize": {"x":0,"y":0,"w":80,"h":24},
 	"sourceSize": {"w":80,"h":24}
 },
+"messages/common/deuce.png":
+{
+	"frame": {"x":405,"y":64,"w":60,"h":24},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":60,"h":24},
+	"sourceSize": {"w":60,"h":24}
+},
 "messages/common/sachisoft.png":
 {
 	"frame": {"x":2,"y":20,"w":360,"h":20},

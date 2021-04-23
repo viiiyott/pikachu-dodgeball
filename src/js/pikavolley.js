@@ -103,6 +103,9 @@ export class PikachuVolleyball {
     /** @type {boolean} true: practice mode on, false: practice mode off */
     this._isPracticeMode = false;
 
+    /** @type {boolean} true: deuce rule on, false: deuce rule off */
+    this.isDeuce = true;
+
     /**
      * The game state which is being rendered now
      * @type {GameState}
@@ -372,7 +375,7 @@ export class PikachuVolleyball {
         this.isPlayer2Serve = true;
         this.scores[1] += 1;
         this.physics.player1.state = 6;
-        if (this.scores[1] >= this.winningScore) {
+        if (this.scores[1] >= this.winningScore && (!this.isDeuce || this.scores[1] >= this.scores[0] + 2)) {
           this.gameEnded = true;
           this.physics.player1.isWinner = false;
           this.physics.player2.isWinner = true;
@@ -383,7 +386,7 @@ export class PikachuVolleyball {
         this.isPlayer2Serve = false;
         this.scores[0] += 1;
         this.physics.player2.state = 6;
-        if (this.scores[0] >= this.winningScore) {
+        if (this.scores[0] >= this.winningScore && (!this.isDeuce || this.scores[0] >= this.scores[1] + 2)) {
           this.gameEnded = true;
           this.physics.player1.isWinner = true;
           this.physics.player2.isWinner = false;
@@ -400,9 +403,14 @@ export class PikachuVolleyball {
     }
 
     if (this.roundEnded === true && this.gameEnded === false) {
+      const nowDeuce = (this.scores[0] >= this.winningScore && this.scores[0] < this.scores[1] + 2) || (this.scores[1] >= this.winningScore && this.scores[1] < this.scores[0] + 2) || (this.scores[0] == this.winningScore - 1 && this.scores[1] == this.winningScore - 1);
+      if (this.isDeuce && nowDeuce && this.slowMotionFramesLeft % 2 === 0) {
+        this.view.game.toggleDeuceMessage();
+      }
       // if this is the last frame of this round, begin fade out
       if (this.slowMotionFramesLeft === 0) {
         this.view.fadeInOut.changeBlackAlphaBy(1 / 16); // fade out
+        this.view.game.drawDeuceMessage(false);
         this.state = this.afterEndOfRound;
       }
     }

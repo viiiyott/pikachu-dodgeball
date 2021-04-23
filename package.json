@@ -22,7 +22,8 @@
   "homepage": "https://github.com/viiiyott/pikachu-dodgeball#readme",
   "dependencies": {
     "pixi-sound": "^3.0.5",
-    "pixi.js-legacy": "^5.3.3"
+    "pixi.js-legacy": "^5.3.3",
+    "ssri": "^8.0.1"
   },
   "type": "module",
   "devDependencies": {
