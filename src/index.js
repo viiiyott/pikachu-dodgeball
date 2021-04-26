@@ -90,7 +90,7 @@ function setUpInitialUI() {
   // @ts-ignore
   optionsDropdownBtn.disabled = false;*/
 
-  console.log('ver 03.31.2');
+  console.log('ver 04.23.1');
   loader.load(setup); // setup is called after loader finishes loading
   loadingBox.classList.remove('hidden');
 }

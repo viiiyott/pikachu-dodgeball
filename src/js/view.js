@@ -508,7 +508,8 @@ export class GameView {
       this.punch.visible = false;
     }
 
-    if (ball.isPowerHit === true) {
+    //if (ball.isPowerHit === true) {
+    if (ball.thrower !== 0) {
       this.ballHyper.x = ball.previousX;
       this.ballHyper.y = ball.previousY;
       this.ballTrail.x = ball.previousPreviousX;

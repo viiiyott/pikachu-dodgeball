@@ -27,6 +27,7 @@
  *
  */
 'use strict';
+import { groupD8 } from 'pixi.js-legacy';
 import { rand } from './rand.js';
 
 /** @constant @type {number} ground width */
@@ -135,7 +136,8 @@ class Player {
      * If it is 1, computer player stands by adjecent to the net.
      * @type {number} 0 or 1
      */
-    this.computerWhereToStandBy = 0; // 0xDC
+    this.computerWhereToStandBy = GROUND_HALF_WIDTH / 4; // 0xDC
+    this.computerAttackStrategy = 0;
 
     /**
      * This property is not in the player pointers of the original source code.
@@ -193,6 +195,7 @@ class Player {
     }
 
     this.powerHitOnGround = -1;
+    this.doubleJump = 0;
 
     /**
      * This value is initialized to (_rand() % 5) before the start of every round.
@@ -207,7 +210,9 @@ class Player {
      *
      * @type {number} 0, 1, 2, 3 or 4
      */
+    this.computerWhereToStandBy = GROUND_HALF_WIDTH / 3;
     this.computerBoldness = rand() % 5; // 0xD8  // initialized to (_rand() % 5)
+    this.computerAttackStrategy = 0;
   }
 }
 
@@ -285,6 +290,7 @@ class Ball {
     this.punchEffectRadius = 0; // 0x4c // initialized to 0
     /** @type {boolean} is power hit */
     this.isPowerHit = false; // 0x68  // initialized to 0 i.e. false
+    this.thrower = 0;
   }
 }
 
@@ -333,6 +339,7 @@ function physicsEngine(player1, player2, ball, userInputArray) {
     processPlayerMovementAndSetPlayerPosition(
       player,
       userInputArray[i],
+      theOtherPlayer,
       ball
     );
 
@@ -360,18 +367,16 @@ function physicsEngine(player1, player2, ball, userInputArray) {
     );
     if (is_happend === true && !theOtherPlayer.holding) {
       if (player.isCollisionWithBallHappened === false) {
-        if(player.isComputer && !theOtherPlayer.holding && (ball.thrower !== 2 - i || rand() % 3 > 0)) {
-          ball.thrower = 0;
-          //ball.isPowerHit = false;
-          player.holding = true;
-        } else {
+        //if(player.isComputer && !theOtherPlayer.holding && (ball.thrower !== 2 - i || rand() % 3 > 0)) {
+        //  ball.thrower = 0;
+        //  player.holding = true;
+        //} else {
           if (player.state === 2) {
             if(ball.thrower === 2 - i && player.delayBeforeNextFrame <= 5) {
               playerTouchingBall = i + 1;
               ball.sound.ballTouchesGround = true;
             } else if (!theOtherPlayer.holding) {
               ball.thrower = 0;
-              //ball.isPowerHit = false;
               player.holding = true;
             }
           } else {
@@ -386,7 +391,7 @@ function physicsEngine(player1, player2, ball, userInputArray) {
               ball.sound.ballTouchesGround = true;
             }
           }
-        }
+        //}
         player.isCollisionWithBallHappened = true;
       }
     } else {
@@ -533,10 +538,13 @@ function processCollisionBetweenBallAndWorldAndSetBallPosition(ball) {
 function processPlayerMovementAndSetPlayerPosition(
   player,
   userInput,
+  theOtherPlayer,
   ball
 ) {
   if (player.isComputer === true) {
-    letComputerDecideUserInput(player, ball, userInput);
+    if (!player.isPlayer2) {
+      letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput);
+    }
   }
 
   if(player.holding) {
@@ -607,11 +615,33 @@ function processPlayerMovementAndSetPlayerPosition(
     player.state = 1;
     player.frameNumber = 0;
     player.powerHitOnGround = -1;
+    player.doubleJump = 1;
     // maybe-stereo-sound function FUN_00408470 (0x90) ommited:
     // refer a detailed comment above about this function
     // maybe-sound code function (playerpointer + 0x90 + 0x10)? ommited
     player.sound.chu = true;
   }
+
+  if(userInput.yDirection === 0 && player.doubleJump === 1) {
+    player.doubleJump = 2;
+  }
+
+  // double jump
+  /*if (
+    (player.state < 3 || player.state === 7) &&
+    userInput.yDirection === -1 && // up-direction input
+    player.y < PLAYER_TOUCHING_GROUND_Y_COORD && // player is jumping
+    player.doubleJump === 2
+  ) {
+    player.yVelocity = -12;
+    player.state = 1;
+    player.frameNumber = 0;
+    player.doubleJump = 1;
+    // maybe-stereo-sound function FUN_00408470 (0x90) ommited:
+    // refer a detailed comment above about this function
+    // maybe-sound code function (playerpointer + 0x90 + 0x10)? ommited
+    player.sound.chu = true;
+  }*/
 
   // fall
   if(
@@ -637,6 +667,7 @@ function processPlayerMovementAndSetPlayerPosition(
     player.y = PLAYER_TOUCHING_GROUND_Y_COORD;
     player.frameNumber = 0;
     player.powerHitOnGround = -1;
+    player.doubleJump = 0;
     if (player.state === 3 || player.state === 7) {
       // if player is diving..
       player.state = 4;
@@ -646,6 +677,9 @@ function processPlayerMovementAndSetPlayerPosition(
     } else {
       player.state = 0;
     }
+  }
+  if(player.y < PLAYER_HALF_LENGTH_Y) {
+    player.y = PLAYER_HALF_LENGTH_Y;
   }
 
   if (userInput.powerHit === 1) {
@@ -852,100 +886,282 @@ function caculate_expected_landing_point_x_for(ball) {
   ball.expectedLandingPointX = copyBall.x;
 }
 
-/**
- * FUN_00402360
- * Computer controls its player by this function.
- * Computer decides the user input for the player it controls,
- * according to the game situation it figures out
- * by the given parameters (player, ball and theOtherplayer),
- * and reflects these to the given user input object.
- *
- * @param {Player} player The player whom computer contorls
- * @param {Ball} ball ball
- * @param {Player} theOtherPlayer The other player
- * @param {PikaUserInput} userInput user input of the player whom computer controls
- */
-function letComputerDecideUserInput(player, ball, userInput) {
+
+function letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput) {
   userInput.xDirection = 0;
   userInput.yDirection = 0;
   userInput.powerHit = 0;
 
-  let virtualExpectedLandingPointX = ball.expectedLandingPointX;
-  if (
-    Math.abs(ball.x - player.x) > 100 &&
-    Math.abs(ball.xVelocity) < player.computerBoldness + 5
-  ) {
-    const leftBoundary = Number(player.isPlayer2) * GROUND_HALF_WIDTH;
-    if (
-      (ball.expectedLandingPointX <= leftBoundary ||
-        ball.expectedLandingPointX >=
-          Number(player.isPlayer2) * GROUND_WIDTH + GROUND_HALF_WIDTH) &&
-      player.computerWhereToStandBy === 0
-    ) {
-      // If conditions above met, the computer estimates the proper location to stay as the middle point of their side
-      virtualExpectedLandingPointX = leftBoundary + GROUND_HALF_WIDTH / 2;
-    }
-  }
-
-  if (
-    Math.abs(virtualExpectedLandingPointX - player.x) >
-    player.computerBoldness + 8
-  ) {
-    if (player.x < virtualExpectedLandingPointX) {
-      userInput.xDirection = 1;
-    } else {
-      userInput.xDirection = -1;
-    }
-  } else if (rand() % 20 === 0) {
-    player.computerWhereToStandBy = rand() % 2;
-  }
-
-  if (player.state === 0) {
-    if (
-      Math.abs(ball.xVelocity) < player.computerBoldness + 3 &&
-      Math.abs(ball.x - player.x) < PLAYER_HALF_LENGTH &&
-      ball.y > -36 &&
-      ball.y < 10 * player.computerBoldness + 84 &&
-      ball.yVelocity > 0
-    ) {
-      userInput.yDirection = -1;
-    }
-
-    /*const leftBoundary = Number(player.isPlayer2) * GROUND_HALF_WIDTH;
-    const rightBoundary = (Number(player.isPlayer2) + 1) * GROUND_HALF_WIDTH;
-    if (
-      ball.expectedLandingPointX > leftBoundary &&
-      ball.expectedLandingPointX < rightBoundary &&
-      Math.abs(ball.x - player.x) >
-        player.computerBoldness * 5 + PLAYER_LENGTH &&
-      ball.x > leftBoundary &&
-      ball.x < rightBoundary &&
-      ball.y > 174
-    ) {
-      // If conditions above met, the computer decides to dive!
-      userInput.powerHit = 1;
-      if (player.x < ball.x) {
-        userInput.xDirection = 1;
-      } else {
-        userInput.xDirection = -1;
-      }
-    }*/
-  } else if (player.state === 1 || player.state === 2) {
-    if (Math.abs(ball.x - player.x) > 8) {
-      if (player.x < ball.x) {
-        userInput.xDirection = -1;
-      } else {
-        userInput.xDirection = 1;
-      }
-    }
-  }
   if (player.holding) {
-    userInput.yDirection = -1;
-    if (player.y < PLAYER_TOUCHING_GROUND_Y_COORD - 100 && rand() % 10 === 0) {
+    if(player.holdingFrame > 0 && player.holdingFrame < 5) {
+      userInput.xDirection = 1;
+      userInput.yDirection = -1;
       userInput.powerHit = 1;
-      userInput.xDirection = player.isPlayer2 ? -1 : 1;
-      userInput.yDirection = rand() % 2 - 1;
+      return;
+    }
+    if (player.x < GROUND_HALF_WIDTH - PLAYER_HALF_LENGTH_X * 3) {
+      userInput.xDirection = 1;
+      player.computerAttackStrategy = 0;
+      if(rand() % 60 === 0) {
+        userInput.xDirection = rand() % 2;
+        userInput.yDirection = -1;
+        userInput.powerHit = 1;
+      }
+      return;
+    }
+    if(player.computerAttackStrategy === 0) {
+      player.computerAttackStrategy = rand() % 4 + 1;
+      return;
+    }
+    if (player.computerAttackStrategy <= 2) {
+      player.computerAttackStrategy = 20;//rand() % 10 + 10;
+      return;
+    }
+    if (player.computerAttackStrategy === 3) {
+      if(player.y === PLAYER_TOUCHING_GROUND_Y_COORD) {
+        userInput.xDirection = 1;
+        userInput.yDirection = -1;
+        userInput.powerHit = 1;
+        player.computerAttackStrategy = 0;
+      }
+      return;
+    }
+    if(player.computerAttackStrategy === 4) {
+      userInput.yDirection = -1;
+      player.computerAttackStrategy = rand() % 15 + 55;
+      return;
+    }
+    if(player.computerAttackStrategy >= 5 && player.computerAttackStrategy < 20) {
+      player.computerAttackStrategy += 1;
+      return;
+    }
+    if(player.computerAttackStrategy === 20) {
+      userInput.yDirection = -1;
+      player.computerAttackStrategy = rand() % 15 + 33;
+      return;
+    }
+    if(player.computerAttackStrategy >= 20 && player.computerAttackStrategy < 50) {
+      userInput.yDirection = -1;
+      player.computerAttackStrategy += 1;
+      if(player.y < PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y && theOtherPlayer.x - player.x < PLAYER_HALF_LENGTH_X * 10) {
+        player.computerAttackStrategy = 50;
+      }
+      if(player.y < PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y && Math.abs(player.y - theOtherPlayer.y) < PLAYER_HALF_LENGTH_Y && theOtherPlayer.x < GROUND_HALF_WIDTH * 5 / 3 && rand() % 3 == 0) {
+        player.computerAttackStrategy = 50;
+      }
+      return;
+    }
+    if(player.computerAttackStrategy === 50) {
+      if(theOtherPlayer.x - player.x < PLAYER_HALF_LENGTH_X * 10) {
+        if(player.y > PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 4 && theOtherPlayer.x - player.x > PLAYER_HALF_LENGTH_X * 7) {
+          userInput.yDirection = -1;
+          return;
+        }
+        userInput.xDirection = 1;
+        userInput.yDirection = 1;
+        if(player.y - theOtherPlayer.y > PLAYER_HALF_LENGTH_Y * 2) {
+          userInput.yDirection = -1;
+        }
+        if(Math.abs(player.y - theOtherPlayer.y) < PLAYER_HALF_LENGTH_Y * 2) {
+          userInput.yDirection = 0;
+        }
+      } else if(player.y - theOtherPlayer.y < - PLAYER_HALF_LENGTH_Y * 2 && theOtherPlayer.x > GROUND_HALF_WIDTH * 4 / 3 && theOtherPlayer.x < GROUND_HALF_WIDTH * 5 / 3 && rand() % 3 === 0) {
+        userInput.xDirection = 0;
+        userInput.yDirection = 0;
+      } else if(player.y - theOtherPlayer.y > PLAYER_HALF_LENGTH_Y * 2) {
+        userInput.xDirection = 1;
+        userInput.yDirection = -1;
+      } else {
+        userInput.xDirection = 1;
+        userInput.yDirection = 0;
+      }
+      userInput.powerHit = 1;
+      player.computerAttackStrategy = 0;
+      return;
+    }
+    if(player.computerAttackStrategy >= 50 && player.computerAttackStrategy < 75) {
+      userInput.yDirection = -1;
+      player.computerAttackStrategy += 1;
+      if(player.y < PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y && theOtherPlayer.x - player.x < PLAYER_HALF_LENGTH_X * 10) {
+        player.computerAttackStrategy = 50;
+      } else if(theOtherPlayer.y < player.y - PLAYER_HALF_LENGTH_Y * 2) {
+        player.computerAttackStrategy = 70;
+      }
+      return;
+    }
+    if(player.computerAttackStrategy === 75) {
+      userInput.yDirection = 1;
+      player.computerAttackStrategy = rand() % 5 + 75;
+      return;
+    }
+    if(player.computerAttackStrategy >= 75 && player.computerAttackStrategy < 80) {
+      player.computerAttackStrategy += 1;
+      if(player.y > PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 2) {
+        player.computerAttackStrategy = 80;
+      } else if(theOtherPlayer.y > player.y && theOtherPlayer.y < player.y - PLAYER_HALF_LENGTH_Y && theOtherPlayer.yVelocity > -5) {
+        player.computerAttackStrategy = 80;
+      } else if(theOtherPlayer.y > player.y + PLAYER_HALF_LENGTH_Y * 4) {
+        player.computerAttackStrategy = 75;
+      }
+      return;
+    }
+    if(player.computerAttackStrategy === 80) {
+      userInput.xDirection = 1;
+      userInput.yDirection = 0;
+      userInput.powerHit = 1;
+      player.computerAttackStrategy = 0;
+      return;
+    }
+    return;
+  }
+
+  if (decideCatch(ball, player)) {
+    userInput.powerHit = 1;
+    return;
+  }
+
+  let virtualExpectedLandingPointX = ball.expectedLandingPointX;
+  if (ball.thrower === 2) {
+    let lowBall = ball.punchEffectY > PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 2.5 && ball.y > BALL_TOUCHING_GROUND_Y_COORD / 2 && Math.abs(ball.yVelocity) < 10;
+    if(theOtherPlayer.x > GROUND_HALF_WIDTH * 3 / 2 && player.x < GROUND_HALF_WIDTH / 2 && ball.punchEffectY > PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 6 && Math.abs(ball.yVelocity) < 10) {
+      lowBall = true;
+    }
+    /*if(theOtherPlayer.x < GROUND_HALF_WIDTH * 4 / 3 && rand() % 5 === 0) {
+      lowBall = !lowBall;
+    }*/
+    //console.log(parseInt(player.x / GROUND_HALF_WIDTH * 3), parseInt(virtualExpectedLandingPointX / GROUND_HALF_WIDTH * 3));
+    switch (parseInt(virtualExpectedLandingPointX / GROUND_HALF_WIDTH * 3)) {
+      case 0:
+        if(lowBall) {
+          userInput.xDirection = -1;
+          userInput.yDirection = -1;
+        } else {
+          if (player.x < GROUND_HALF_WIDTH / 3) {
+            userInput.xDirection = 1;
+            userInput.powerHit = 1;
+          } else if (player.x < GROUND_HALF_WIDTH * 2 / 3) {
+            userInput.xDirection = 1;
+          }
+        }
+        break;
+      case 1:
+        if(lowBall && player.x > GROUND_HALF_WIDTH / 3) {
+          userInput.xDirection = -1;
+          userInput.yDirection = -1;
+        } else {
+          if (player.x < GROUND_HALF_WIDTH / 3) {
+            if(!lowBall && ball.punchEffectY > PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 4.5) {
+              userInput.xDirection = 1;
+              userInput.powerHit = 1;
+            } else {
+              userInput.xDirection = -1;
+            }
+          } else if (player.x < GROUND_HALF_WIDTH * 2 / 3) {
+            if(lowBall || (virtualExpectedLandingPointX > GROUND_HALF_WIDTH / 2 && ball.yVelocity > 20)) {
+              userInput.xDirection = -1;
+            } else {
+              userInput.xDirection = 1;
+            }
+            userInput.powerHit = 1;
+          } else {
+            userInput.xDirection = 1;
+          }
+        }
+        break;
+      case 2:
+        if (player.x > GROUND_HALF_WIDTH * 2 / 3) {
+          if(lowBall) {
+            userInput.xDirection = -1;
+            userInput.yDirection = -1;
+          } else {
+            userInput.xDirection = -1;
+            userInput.powerHit = 1;
+          }
+        } else if (player.x > GROUND_HALF_WIDTH / 3) {
+          userInput.xDirection = -1;
+        }
+        break;
+      default:
+        break;
+    }
+  } else if (ball.thrower === 0) {
+    if (ball.x > GROUND_HALF_WIDTH) {
+      if (Math.abs(player.computerWhereToStandBy - player.x) > 12) {
+        if (player.x < player.computerWhereToStandBy) {
+          userInput.xDirection = 1;
+        } else {
+          userInput.xDirection = -1;
+        }
+      }
+      if(theOtherPlayer.holding && player.y < PLAYER_TOUCHING_GROUND_Y_COORD) {
+        userInput.yDirection = 1;
+      }
+      if(rand() % 10 === 0) {
+        player.computerWhereToStandBy = GROUND_HALF_WIDTH / 3 + rand() % 61 - 30;
+      }
+      if(player.x < GROUND_HALF_WIDTH / 4) {
+        player.computerWhereToStandBy = GROUND_HALF_WIDTH / 3 + 20;
+      }
+    } else {
+      let targetX = virtualExpectedLandingPointX;
+      if(targetX > GROUND_HALF_WIDTH) {
+        targetX = ball.x;
+        if(ball.x > GROUND_HALF_WIDTH * 2 / 3 && player.x < GROUND_HALF_WIDTH * 2 / 3) {
+          targetX = player.computerAttackStrategy;
+        }
+      }
+      if (Math.abs(targetX - player.x) > PLAYER_HALF_LENGTH_X / 2) {
+        if (player.x < targetX) {
+          userInput.xDirection = 1;
+        } else {
+          userInput.xDirection = -1;
+        }
+      }
+      if (ball.yVelocity > -8 && Math.abs(ball.y - player.y) > PLAYER_HALF_LENGTH_Y * 2 && !(ball.xVelocity > 0 && ball.x > player.x)) {
+        if (player.y < ball.y) {
+          userInput.yDirection = 1;
+        } else {
+          //userInput.yDirection = -1;
+        }
+      }
+      if(ball.punchEffectX < player.x && ball.x < player.x && ball.yVelocity < 0 && ball.yVelocity > -15 && ball.y > BALL_TOUCHING_GROUND_Y_COORD / 2) {
+        userInput.xDirection = -1;
+        if(ball.y > player.y + PLAYER_HALF_LENGTH_Y * 2) {
+          userInput.xDirection = 1;
+          userInput.yDirection = 1;
+        } else {
+          userInput.yDirection = -1;
+        }
+      }
     }
   }
 }
 
+function decideCatch(ball, player) {
+  let playerX = player.x;
+  let playerY = player.y;
+  playerX = playerX > GROUND_HALF_WIDTH ? playerX - 8 : playerX + 8
+  playerY = playerY + 4
+
+  let diffX = Math.abs(playerX - ball.x)
+  let diffY = Math.abs(playerY - ball.y)
+
+  if ((diffX - PLAYER_HALF_LENGTH_X) ** 2 + (diffY - PLAYER_HALF_LENGTH_Y) ** 2 > BALL_RADIUS ** 2 * 3) {
+    return false;
+  }
+  if ((!player.isPlayer2 && ball.thrower !== 2) || (player.isPlayer2 && ball.thrower !== 1)) {
+    return true;
+  }
+
+  let v = ball.xVelocity ** 2 + ball.yVelocity ** 2;
+  if (v > 1000) {
+    return false;
+  }
+  if(v > 401 && rand() % 10 < 7) {
+    return false;
+  }
+  if(rand() % 10 < 4) {
+    return false;
+  }
+  return true;
+}
