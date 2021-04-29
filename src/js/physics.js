@@ -130,14 +130,11 @@ class Player {
     this.gameEnded = false; // 0xD4
 
     /**
-     * It flips randomly to 0 or 1 by the {@link letComputerDecideUserInput} function (FUN_00402360)
-     * when ball is hanging around on the other player's side.
-     * If it is 0, computer player stands by around the middle point of their side.
-     * If it is 1, computer player stands by adjecent to the net.
-     * @type {number} 0 or 1
+     * Computer's Difficulty
+     * 0: easy, 1: normal, 2: hard, 3: legendary
+     * @type {number} 0, 1, 2 or 3
      */
-    this.computerWhereToStandBy = GROUND_HALF_WIDTH / 4; // 0xDC
-    this.computerAttackStrategy = 0;
+    this.computerDifficulty = 1;
 
     /**
      * This property is not in the player pointers of the original source code.
@@ -891,6 +888,7 @@ function letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput)
   userInput.xDirection = 0;
   userInput.yDirection = 0;
   userInput.powerHit = 0;
+  const diff = player.computerDifficulty;
 
   if (player.holding) {
     if(player.holdingFrame > 0 && player.holdingFrame < 5) {
@@ -899,22 +897,46 @@ function letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput)
       userInput.powerHit = 1;
       return;
     }
-    if (player.x < GROUND_HALF_WIDTH - PLAYER_HALF_LENGTH_X * 3) {
+    if(player.holdingFrame > 73 && player.y < PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 2 && rand() % 5 == 0 && diff >= 3) {
       userInput.xDirection = 1;
-      player.computerAttackStrategy = 0;
-      if(rand() % 60 === 0) {
-        userInput.xDirection = rand() % 2;
+      userInput.powerHit = 1;
+      return;
+    }
+    if(player.computerAttackStrategy === 0 && player.x > GROUND_HALF_WIDTH * 2/ 3 && rand() % 10 === 0 && diff === 0) {
+      player.computerAttackStrategy = 1;
+      return;
+    }
+    if (player.computerAttackStrategy === 0 && player.x < GROUND_HALF_WIDTH - PLAYER_HALF_LENGTH_X * 3) {
+      userInput.xDirection = 1;
+      if(rand() % 100 < 14 - diff * 4) {
         userInput.yDirection = -1;
-        userInput.powerHit = 1;
+        if(player.y < PLAYER_TOUCHING_GROUND_Y_COORD * 2 / 3 && diff === 0) {
+          userInput.xDirection = rand() % 2;
+          userInput.powerHit = 1;
+        }
       }
       return;
     }
     if(player.computerAttackStrategy === 0) {
-      player.computerAttackStrategy = rand() % 4 + 1;
+      switch(diff) {
+        case 0:
+          player.computerAttackStrategy = 1;
+          break;
+        case 1:
+          player.computerAttackStrategy = rand() % 2 + 2;
+          break;
+        case 2:
+        case 3:
+          player.computerAttackStrategy = rand() % 4 + 1;
+          break;
+      }
       return;
     }
     if (player.computerAttackStrategy <= 2) {
-      player.computerAttackStrategy = 20;//rand() % 10 + 10;
+      player.computerAttackStrategy = rand() % 5 + 15;
+      if (diff >= 2) {
+        player.computerAttackStrategy = 20;
+      }
       return;
     }
     if (player.computerAttackStrategy === 3) {
@@ -943,16 +965,16 @@ function letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput)
     if(player.computerAttackStrategy >= 20 && player.computerAttackStrategy < 50) {
       userInput.yDirection = -1;
       player.computerAttackStrategy += 1;
-      if(player.y < PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y && theOtherPlayer.x - player.x < PLAYER_HALF_LENGTH_X * 10) {
+      if(player.y < PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y && theOtherPlayer.x - player.x < PLAYER_HALF_LENGTH_X * 10 && diff >= 2) {
         player.computerAttackStrategy = 50;
       }
-      if(player.y < PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y && Math.abs(player.y - theOtherPlayer.y) < PLAYER_HALF_LENGTH_Y && theOtherPlayer.x < GROUND_HALF_WIDTH * 5 / 3 && rand() % 3 == 0) {
+      if(player.y < PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y && Math.abs(player.y - theOtherPlayer.y) < PLAYER_HALF_LENGTH_Y && theOtherPlayer.x < GROUND_HALF_WIDTH * 5 / 3 && rand() % 3 == 0 && diff >= 2) {
         player.computerAttackStrategy = 50;
       }
       return;
     }
     if(player.computerAttackStrategy === 50) {
-      if(theOtherPlayer.x - player.x < PLAYER_HALF_LENGTH_X * 10) {
+      if(theOtherPlayer.x - player.x < PLAYER_HALF_LENGTH_X * 10 && diff >= 1) {
         if(player.y > PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 4 && theOtherPlayer.x - player.x > PLAYER_HALF_LENGTH_X * 7) {
           userInput.yDirection = -1;
           return;
@@ -1013,6 +1035,8 @@ function letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput)
       return;
     }
     return;
+  } else {
+    player.computerAttackStrategy = 0;
   }
 
   if (decideCatch(ball, player)) {
@@ -1022,13 +1046,16 @@ function letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput)
 
   let virtualExpectedLandingPointX = ball.expectedLandingPointX;
   if (ball.thrower === 2) {
+    /*if(rand() % 10 < 7 - diff * 3) {
+      return;
+    }*/
     let lowBall = ball.punchEffectY > PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 2.5 && ball.y > BALL_TOUCHING_GROUND_Y_COORD / 2 && Math.abs(ball.yVelocity) < 10;
     if(theOtherPlayer.x > GROUND_HALF_WIDTH * 3 / 2 && player.x < GROUND_HALF_WIDTH / 2 && ball.punchEffectY > PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 6 && Math.abs(ball.yVelocity) < 10) {
       lowBall = true;
     }
-    /*if(theOtherPlayer.x < GROUND_HALF_WIDTH * 4 / 3 && rand() % 5 === 0) {
+    if(theOtherPlayer.x < GROUND_HALF_WIDTH * 4 / 3 && diff <= 2 && rand() % (diff * 3 + 4) === 0) {
       lowBall = !lowBall;
-    }*/
+    }
     //console.log(parseInt(player.x / GROUND_HALF_WIDTH * 3), parseInt(virtualExpectedLandingPointX / GROUND_HALF_WIDTH * 3));
     switch (parseInt(virtualExpectedLandingPointX / GROUND_HALF_WIDTH * 3)) {
       case 0:
@@ -1093,17 +1120,23 @@ function letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput)
           userInput.xDirection = -1;
         }
       }
-      if(theOtherPlayer.holding && player.y < PLAYER_TOUCHING_GROUND_Y_COORD) {
+      if(theOtherPlayer.holding && player.y < PLAYER_TOUCHING_GROUND_Y_COORD && diff <= 2) {
         userInput.yDirection = 1;
       }
-      if(rand() % 10 === 0) {
+      if(rand() % 10 < 4 - diff) {
         player.computerWhereToStandBy = GROUND_HALF_WIDTH / 3 + rand() % 61 - 30;
+        if(diff <= 1) {
+          player.computerWhereToStandBy = GROUND_HALF_WIDTH / 3 + rand() % 121 - 60;
+        }
       }
       if(player.x < GROUND_HALF_WIDTH / 4) {
         player.computerWhereToStandBy = GROUND_HALF_WIDTH / 3 + 20;
       }
     } else {
       let targetX = virtualExpectedLandingPointX;
+      if(diff <= 1) {
+        targetX += rand() % 51 - 25;
+      }
       if(targetX > GROUND_HALF_WIDTH) {
         targetX = ball.x;
         if(ball.x > GROUND_HALF_WIDTH * 2 / 3 && player.x < GROUND_HALF_WIDTH * 2 / 3) {
@@ -1117,14 +1150,14 @@ function letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput)
           userInput.xDirection = -1;
         }
       }
-      if (ball.yVelocity > -8 && Math.abs(ball.y - player.y) > PLAYER_HALF_LENGTH_Y * 2 && !(ball.xVelocity > 0 && ball.x > player.x)) {
+      if (ball.yVelocity > -8 && Math.abs(ball.y - player.y) > PLAYER_HALF_LENGTH_Y * 2 && !(ball.xVelocity > 0 && ball.x > player.x) && diff >= 1) {
         if (player.y < ball.y) {
           userInput.yDirection = 1;
         } else {
           //userInput.yDirection = -1;
         }
       }
-      if(ball.punchEffectX < player.x && ball.x < player.x && ball.yVelocity < 0 && ball.yVelocity > -15 && ball.y > BALL_TOUCHING_GROUND_Y_COORD / 2) {
+      if(ball.punchEffectX < player.x && ball.x < player.x && ball.yVelocity < 0 && ball.yVelocity > -15 && ball.y > BALL_TOUCHING_GROUND_Y_COORD / 2 && diff >= 1) {
         userInput.xDirection = -1;
         if(ball.y > player.y + PLAYER_HALF_LENGTH_Y * 2) {
           userInput.xDirection = 1;
@@ -1138,6 +1171,7 @@ function letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput)
 }
 
 function decideCatch(ball, player) {
+  const diff = player.computerDifficulty;
   let playerX = player.x;
   let playerY = player.y;
   playerX = playerX > GROUND_HALF_WIDTH ? playerX - 8 : playerX + 8
@@ -1155,12 +1189,15 @@ function decideCatch(ball, player) {
 
   let v = ball.xVelocity ** 2 + ball.yVelocity ** 2;
   if (v > 1000) {
+    if(diff >= 3 && rand() % 10 < 3) {
+      return true;
+    }
     return false;
   }
-  if(v > 401 && rand() % 10 < 7) {
+  if(v > 401 && rand() % 10 < 9 - 2.5 * diff) {
     return false;
   }
-  if(rand() % 10 < 4) {
+  if(rand() % 10 < 6 - 2 * diff) {
     return false;
   }
   return true;
