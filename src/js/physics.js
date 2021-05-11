@@ -27,7 +27,6 @@
  *
  */
 'use strict';
-import { groupD8 } from 'pixi.js-legacy';
 import { rand } from './rand.js';
 
 /** @constant @type {number} ground width */
@@ -49,15 +48,15 @@ const BALL_RADIUS = 20;
 const BALL_TOUCHING_GROUND_Y_COORD = 252;
 
 /**
- * Class representing a pack of physical objects i.e. players and ball
- * whose physical values are calculated and set by {@link physicsEngine} function
- */
+* Class representing a pack of physical objects i.e. players and ball
+* whose physical values are calculated and set by {@link physicsEngine} function
+*/
 export class PikaPhysics {
   /**
-   * Create a physics pack
-   * @param {boolean} isPlayer1Computer Is player on the left (player 1) controlled by computer?
-   * @param {boolean} isPlayer2Computer Is player on the right (player 2) controlled by computer?
-   */
+  * Create a physics pack
+  * @param {boolean} isPlayer1Computer Is player on the left (player 1) controlled by computer?
+  * @param {boolean} isPlayer2Computer Is player on the right (player 2) controlled by computer?
+  */
   constructor(isPlayer1Computer, isPlayer2Computer) {
     this.player1 = new Player(false, isPlayer1Computer);
     this.player2 = new Player(true, isPlayer2Computer);
@@ -65,11 +64,11 @@ export class PikaPhysics {
   }
 
   /**
-   * run {@link physicsEngine} function with this physics object and user input
-   *
-   * @param {PikaUserInput[]} userInputArray userInputArray[0]: PikaUserInput object for player 1, userInputArray[1]: PikaUserInput object for player 2
-   * @return {number} Is ball touching ground?
-   */
+  * run {@link physicsEngine} function with this physics object and user input
+  *
+  * @param {PikaUserInput[]} userInputArray userInputArray[0]: PikaUserInput object for player 1, userInputArray[1]: PikaUserInput object for player 2
+  * @return {number} Is ball touching ground?
+  */
   runEngineForNextFrame(userInputArray) {
     const playerTouchingBall = physicsEngine(
       this.player1,
@@ -82,8 +81,8 @@ export class PikaPhysics {
 }
 
 /**
- * Class (or precisely, Interface) representing user input (from keyboard or joystick, whatever)
- */
+* Class (or precisely, Interface) representing user input (from keyboard or joystick, whatever)
+*/
 export class PikaUserInput {
   constructor() {
     /** @type {number} 0: no horizontal-direction input, -1: left-direction input, 1: right-direction input */
@@ -96,22 +95,22 @@ export class PikaUserInput {
 }
 
 /**
- * Class representing a player
- *
- * Player 1 property address: 00411F28 -> +28 -> +10 -> +C -> ...
- * Player 2 property address: 00411F28 -> +28 -> +10 -> +10 -> ...
- * The "..." part is written on the line comment at the right side of each property.
- * e.g. address to player1.isPlayer: 00411F28 -> +28 -> +10 -> +C -> +A0
- * e.g. address to player2.isComputer: 00411F28 -> +28 -> +10 -> +10 -> +A4
- *
- * For initial values: refer FUN_000403a90 && FUN_00401f40
- */
+* Class representing a player
+*
+* Player 1 property address: 00411F28 -> +28 -> +10 -> +C -> ...
+* Player 2 property address: 00411F28 -> +28 -> +10 -> +10 -> ...
+* The "..." part is written on the line comment at the right side of each property.
+* e.g. address to player1.isPlayer: 00411F28 -> +28 -> +10 -> +C -> +A0
+* e.g. address to player2.isComputer: 00411F28 -> +28 -> +10 -> +10 -> +A4
+*
+* For initial values: refer FUN_000403a90 && FUN_00401f40
+*/
 class Player {
   /**
-   * create a player
-   * @param {boolean} isPlayer2 Is this player on the right side?
-   * @param {boolean} isComputer Is this player controlled by computer?
-   */
+  * create a player
+  * @param {boolean} isPlayer2 Is this player on the right side?
+  * @param {boolean} isComputer Is this player controlled by computer?
+  */
   constructor(isPlayer2, isComputer) {
     /** @type {boolean} Is this player on the right side? */
     this.isPlayer2 = isPlayer2; // 0xA0
@@ -130,19 +129,22 @@ class Player {
     this.gameEnded = false; // 0xD4
 
     /**
-     * Computer's Difficulty
-     * 0: easy, 1: normal, 2: hard, 3: legendary
-     * @type {number} 0, 1, 2 or 3
-     */
-    this.computerDifficulty = 1;
+    * It flips randomly to 0 or 1 by the {@link letComputerDecideUserInput} function (FUN_00402360)
+    * when ball is hanging around on the other player's side.
+    * If it is 0, computer player stands by around the middle point of their side.
+    * If it is 1, computer player stands by adjecent to the net.
+    * @type {number} 0 or 1
+    */
+    this.computerWhereToStandBy = GROUND_HALF_WIDTH / 3; // 0xDC
+    this.computerAttackStrategy = 0;
 
     /**
-     * This property is not in the player pointers of the original source code.
-     * But for sound effect (especially for stereo sound),
-     * it is convinient way to give sound property to a Player.
-     * The original name is stereo sound.
-     * @type {Object.<string, boolean>}
-     */
+    * This property is not in the player pointers of the original source code.
+    * But for sound effect (especially for stereo sound),
+    * it is convinient way to give sound property to a Player.
+    * The original name is stereo sound.
+    * @type {Object.<string, boolean>}
+    */
     this.sound = {
       pipikachu: false,
       pika: false,
@@ -151,8 +153,8 @@ class Player {
   }
 
   /**
-   * initialize for new round
-   */
+  * initialize for new round
+  */
   initializeForNewRound(isPlayer2Serve) {
     /** @type {number} x coord */
     this.x = 36; // 0xA8 // initialized to 36 (player1) or 396 (player2)
@@ -167,13 +169,13 @@ class Player {
     this.isCollisionWithBallHappened = false; // 0xBC   // initizlized to 0 i.e false
 
     /**
-     * Player's state
-     * 0: normal, 1: jumping, 2: jumping_and_power_hitting, 3: diving
-     * 4: lying_down_after_diving
-     * 5: win!, 6: lost..
-     * 7: falling
-     * @type {number} 0, 1, 2, 3, 4, 5, 6 or 7
-     */
+    * Player's state
+    * 0: normal, 1: jumping, 2: jumping_and_power_hitting, 3: diving
+    * 4: lying_down_after_diving
+    * 5: win!, 6: lost..
+    * 7: falling
+    * @type {number} 0, 1, 2, 3, 4, 5, 6 or 7
+    */
     this.state = 0; // 0xC0   // initialized to 0
     /** @type {number} */
     this.frameNumber = 0; // 0xC4   // initialized to 0
@@ -192,50 +194,53 @@ class Player {
     }
 
     this.powerHitOnGround = -1;
-    this.doubleJump = 0;
 
     /**
-     * This value is initialized to (_rand() % 5) before the start of every round.
-     * The greater the number, the bolder the computer player.
-     *
-     * If computer has higher boldness,
-     * judges more the ball is haing around the other player's side,
-     * has greater distance to the expected landing point of the ball,
-     * jumps more,
-     * dives less.
-     * See the source code of the {@link letComputerDecideUserInput} function (FUN_00402360).
-     *
-     * @type {number} 0, 1, 2, 3 or 4
-     */
+    * This value is initialized to (_rand() % 5) before the start of every round.
+    * The greater the number, the bolder the computer player.
+    *
+    * If computer has higher boldness,
+    * judges more the ball is haing around the other player's side,
+    * has greater distance to the expected landing point of the ball,
+    * jumps more,
+    * dives less.
+    * See the source code of the {@link letComputerDecideUserInput} function (FUN_00402360).
+    *
+    * @type {number} 0, 1, 2, 3 or 4
+    */
     this.computerWhereToStandBy = GROUND_HALF_WIDTH / 3;
-    this.computerBoldness = rand() % 5; // 0xD8  // initialized to (_rand() % 5)
+    this.computerWillCatch = -1;
+    this.computerCatching = 0;
+    this.computerCatchCount = 0;
     this.computerAttackStrategy = 0;
+    this.computerShyness = rand() % 5;
+    this.computerCatchFrame = -1;
   }
 }
 
 /**
- * Class representing a ball
- *
- * Ball property address: 00411F28 -> +28 -> +10 -> +14 -> ...
- * The "..." part is written on the line comment at the right side of each property.
- * e.g. address to ball.fineRotation: 00411F28 -> +28 -> +10 -> +14 -> +48
- *
- * For initial Values: refer FUN_000403a90 && FUN_00402d60
- */
+* Class representing a ball
+*
+* Ball property address: 00411F28 -> +28 -> +10 -> +14 -> ...
+* The "..." part is written on the line comment at the right side of each property.
+* e.g. address to ball.fineRotation: 00411F28 -> +28 -> +10 -> +14 -> +48
+*
+* For initial Values: refer FUN_000403a90 && FUN_00402d60
+*/
 class Ball {
   /**
-   * Create a ball
-   * @param {boolean} isPlayer2Serve Will player 2 serve on this new round?
-   */
+  * Create a ball
+  * @param {boolean} isPlayer2Serve Will player 2 serve on this new round?
+  */
   constructor(isPlayer2Serve) {
     this.initializeForNewRound(isPlayer2Serve);
     /** @type {number} x coord of expected lang point */
     this.expectedLandingPointX = 0; // 0x40
     /**
-     * ball rotation frame number selector
-     * During the period where it continues to be 5, hyper ball glitch occur.
-     * @type {number} 0, 1, 2, 3, 4 or 5
-     * */
+    * ball rotation frame number selector
+    * During the period where it continues to be 5, hyper ball glitch occur.
+    * @type {number} 0, 1, 2, 3, 4 or 5
+    * */
     this.rotation = 0; // 0x44
     /** @type {number} */
     this.fineRotation = 0; // 0x48
@@ -245,9 +250,9 @@ class Ball {
     this.punchEffectY = 0; // 0x54
 
     /**
-     * Following previous values are for trailing effect for power hit
-     * @type {number}
-     */
+    * Following previous values are for trailing effect for power hit
+    * @type {number}
+    */
     this.previousX = 0; // 0x58
     this.previousPreviousX = 0; // 0x5c
     this.previousY = 0; // 0x60
@@ -256,11 +261,11 @@ class Ball {
     this.thrower = 0;
 
     /**
-     * this property is not in the ball pointer of the original source code.
-     * But for sound effect (especially for stereo sound),
-     * it is convinient way to give sound property to a Ball.
-     * The original name is stereo sound.
-     */
+    * this property is not in the ball pointer of the original source code.
+    * But for sound effect (especially for stereo sound),
+    * it is convinient way to give sound property to a Ball.
+    * The original name is stereo sound.
+    */
     this.sound = {
       powerHit: false,
       ballTouchesGround: false,
@@ -268,9 +273,9 @@ class Ball {
   }
 
   /**
-   * Initialize for new round
-   * @param {boolean} isPlayer2Serve will player on the right side serve on this new round?
-   */
+  * Initialize for new round
+  * @param {boolean} isPlayer2Serve will player on the right side serve on this new round?
+  */
   initializeForNewRound(isPlayer2Serve) {
     /** @type {number} x coord */
     this.x = 56; // 0x30    // initialized to 56 or 376
@@ -292,16 +297,16 @@ class Ball {
 }
 
 /**
- * FUN_00403dd0
- * This is the Pikachu Volleyball physics engine!
- * This physics engine calculates and set the physics values for the next frame.
- *
- * @param {Player} player1 player on the left side
- * @param {Player} player2 player on the right side
- * @param {Ball} ball ball
- * @param {PikaUserInput[]} userInputArray userInputArray[0]: user input for player 1, userInputArray[1]: user input for player 2
- * @return {boolean} Is ball tounching ground?
- */
+* FUN_00403dd0
+* This is the Pikachu Volleyball physics engine!
+* This physics engine calculates and set the physics values for the next frame.
+*
+* @param {Player} player1 player on the left side
+* @param {Player} player2 player on the right side
+* @param {Ball} ball ball
+* @param {PikaUserInput[]} userInputArray userInputArray[0]: user input for player 1, userInputArray[1]: user input for player 2
+* @return {boolean} Is ball tounching ground?
+*/
 function physicsEngine(player1, player2, ball, userInputArray) {
   const isBallTouchingGround = processCollisionBetweenBallAndWorldAndSetBallPosition(
     ball
@@ -364,15 +369,14 @@ function physicsEngine(player1, player2, ball, userInputArray) {
     );
     if (is_happend === true && !theOtherPlayer.holding) {
       if (player.isCollisionWithBallHappened === false) {
-        //if(player.isComputer && !theOtherPlayer.holding && (ball.thrower !== 2 - i || rand() % 3 > 0)) {
-        //  ball.thrower = 0;
-        //  player.holding = true;
-        //} else {
-          if (player.state === 2) {
-            if(ball.thrower === 2 - i && player.delayBeforeNextFrame <= 5) {
+          if (player.state === 2 || (player.isComputer && player.computerCatching && player.state <= 2)) {
+            if(ball.thrower === 2 - i && !player.isComputer && player.delayBeforeNextFrame <= 5) {
               playerTouchingBall = i + 1;
               ball.sound.ballTouchesGround = true;
             } else if (!theOtherPlayer.holding) {
+              if(ball.thrower === 2 - i && player.computerWillCatch === 1) {
+                player.computerCatchCount += 1;
+              }
               ball.thrower = 0;
               player.holding = true;
             }
@@ -388,7 +392,6 @@ function physicsEngine(player1, player2, ball, userInputArray) {
               ball.sound.ballTouchesGround = true;
             }
           }
-        //}
         player.isCollisionWithBallHappened = true;
       }
     } else {
@@ -417,13 +420,13 @@ function physicsEngine(player1, player2, ball, userInputArray) {
 }
 
 /**
- * FUN_00403070
- * Is collision between ball and player happend?
- * @param {Ball} ball
- * @param {Player["x"]} playerX player.x
- * @param {Player["y"]} playerY player.y
- * @return {boolean}
- */
+* FUN_00403070
+* Is collision between ball and player happend?
+* @param {Ball} ball
+* @param {Player["x"]} playerX player.x
+* @param {Player["y"]} playerY player.y
+* @return {boolean}
+*/
 function isCollisionBetweenBallAndPlayerHappened(ball, playerX, playerY, playerState) {
   if (playerState == 3 || playerState == 4 || playerState == 7) {
     playerY = playerY + 18
@@ -458,11 +461,11 @@ function isCollisionBetweenBallAndPlayerHappened(ball, playerX, playerY, playerS
 }
 
 /**
- * FUN_00402dc0
- * Process collision between ball and world and set ball position
- * @param {Ball} ball
- * @return {boolean} Is ball touching ground?
- */
+* FUN_00402dc0
+* Process collision between ball and world and set ball position
+* @param {Ball} ball
+* @return {boolean} Is ball touching ground?
+*/
 function processCollisionBetweenBallAndWorldAndSetBallPosition(ball) {
   // This is not part of this function in the original assembly code.
   // In the original assembly code, it is processed in other function (FUN_00402ee0)
@@ -525,13 +528,13 @@ function processCollisionBetweenBallAndWorldAndSetBallPosition(ball) {
 }
 
 /**
- * FUN_00401fc0
- * Process player movement according to user input and set player position
- * @param {Player} player
- * @param {PikaUserInput} userInput
- * @param {Player} theOtherPlayer
- * @param {Ball} ball
- */
+* FUN_00401fc0
+* Process player movement according to user input and set player position
+* @param {Player} player
+* @param {PikaUserInput} userInput
+* @param {Player} theOtherPlayer
+* @param {Ball} ball
+*/
 function processPlayerMovementAndSetPlayerPosition(
   player,
   userInput,
@@ -612,33 +615,11 @@ function processPlayerMovementAndSetPlayerPosition(
     player.state = 1;
     player.frameNumber = 0;
     player.powerHitOnGround = -1;
-    player.doubleJump = 1;
     // maybe-stereo-sound function FUN_00408470 (0x90) ommited:
     // refer a detailed comment above about this function
     // maybe-sound code function (playerpointer + 0x90 + 0x10)? ommited
     player.sound.chu = true;
   }
-
-  if(userInput.yDirection === 0 && player.doubleJump === 1) {
-    player.doubleJump = 2;
-  }
-
-  // double jump
-  /*if (
-    (player.state < 3 || player.state === 7) &&
-    userInput.yDirection === -1 && // up-direction input
-    player.y < PLAYER_TOUCHING_GROUND_Y_COORD && // player is jumping
-    player.doubleJump === 2
-  ) {
-    player.yVelocity = -12;
-    player.state = 1;
-    player.frameNumber = 0;
-    player.doubleJump = 1;
-    // maybe-stereo-sound function FUN_00408470 (0x90) ommited:
-    // refer a detailed comment above about this function
-    // maybe-sound code function (playerpointer + 0x90 + 0x10)? ommited
-    player.sound.chu = true;
-  }*/
 
   // fall
   if(
@@ -664,7 +645,6 @@ function processPlayerMovementAndSetPlayerPosition(
     player.y = PLAYER_TOUCHING_GROUND_Y_COORD;
     player.frameNumber = 0;
     player.powerHitOnGround = -1;
-    player.doubleJump = 0;
     if (player.state === 3 || player.state === 7) {
       // if player is diving..
       player.state = 4;
@@ -770,10 +750,10 @@ function processPlayerMovementAndSetPlayerPosition(
 }
 
 /**
- * FUN_004025e0
- * Process game end frame (for winner and loser motions) for the given player
- * @param {Player} player
- */
+* FUN_004025e0
+* Process game end frame (for winner and loser motions) for the given player
+* @param {Player} player
+*/
 function processGameEndFrameFor(player) {
   if (player.gameEnded === true && player.frameNumber < 4) {
     player.delayBeforeNextFrame += 1;
@@ -785,17 +765,17 @@ function processGameEndFrameFor(player) {
 }
 
 /**
- * FUN_004030a0
- * Process collision between ball and player.
- * This function only sets velocity of ball and expected landing point x of ball.
- * This function does not set position of ball.
- * The ball position is set by {@link processCollisionBetweenBallAndWorldAndSetBallPosition} function
- *
- * @param {Ball} ball
- * @param {Player["x"]} playerX
- * @param {PikaUserInput} userInput
- * @param {Player["state"]} playerState
- */
+* FUN_004030a0
+* Process collision between ball and player.
+* This function only sets velocity of ball and expected landing point x of ball.
+* This function does not set position of ball.
+* The ball position is set by {@link processCollisionBetweenBallAndWorldAndSetBallPosition} function
+*
+* @param {Ball} ball
+* @param {Player["x"]} playerX
+* @param {PikaUserInput} userInput
+* @param {Player["state"]} playerState
+*/
 function processCollisionBetweenBallAndPlayer(
   ball,
   playerX,
@@ -852,10 +832,10 @@ function processCollisionBetweenBallAndPlayer(
 }
 
 /**
- * FUN_004031b0
- * Calculate x coordinate of expected landing point of the ball
- * @param {Ball} ball
- */
+* FUN_004031b0
+* Calculate x coordinate of expected landing point of the ball
+* @param {Ball} ball
+*/
 function caculate_expected_landing_point_x_for(ball) {
   const copyBall = {
     x: ball.x,
@@ -888,63 +868,47 @@ function letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput)
   userInput.xDirection = 0;
   userInput.yDirection = 0;
   userInput.powerHit = 0;
-  const diff = player.computerDifficulty;
 
   if (player.holding) {
+    player.computerWillCatch = -1;
     if(player.holdingFrame > 0 && player.holdingFrame < 5) {
       userInput.xDirection = 1;
       userInput.yDirection = -1;
       userInput.powerHit = 1;
       return;
     }
-    if(player.holdingFrame > 73 && player.y < PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 2 && rand() % 5 == 0 && diff >= 3) {
-      userInput.xDirection = 1;
+    const killingAttack = findKillingAttack(ball, theOtherPlayer);
+    if(killingAttack.found === 1 && theOtherPlayer.y < PLAYER_TOUCHING_GROUND_Y_COORD && rand() % 10 < 7) {
+      userInput.xDirection = killingAttack.x;
+      userInput.yDirection = killingAttack.y;
       userInput.powerHit = 1;
-      return;
-    }
-    if(player.computerAttackStrategy === 0 && player.x > GROUND_HALF_WIDTH * 2/ 3 && rand() % 10 === 0 && diff === 0) {
-      player.computerAttackStrategy = 1;
       return;
     }
     if (player.computerAttackStrategy === 0 && player.x < GROUND_HALF_WIDTH - PLAYER_HALF_LENGTH_X * 3) {
       userInput.xDirection = 1;
-      if(rand() % 100 < 14 - diff * 4) {
+      if(rand() % 60 === 0) {
         userInput.yDirection = -1;
-        if(player.y < PLAYER_TOUCHING_GROUND_Y_COORD * 2 / 3 && diff === 0) {
-          userInput.xDirection = rand() % 2;
-          userInput.powerHit = 1;
-        }
       }
       return;
     }
     if(player.computerAttackStrategy === 0) {
-      switch(diff) {
-        case 0:
-          player.computerAttackStrategy = 1;
-          break;
-        case 1:
-          player.computerAttackStrategy = rand() % 2 + 2;
-          break;
-        case 2:
-        case 3:
-          player.computerAttackStrategy = rand() % 4 + 1;
-          break;
-      }
+      player.computerAttackStrategy = rand() % 4 + 1;
       return;
     }
     if (player.computerAttackStrategy <= 2) {
-      player.computerAttackStrategy = rand() % 5 + 15;
-      if (diff >= 2) {
-        player.computerAttackStrategy = 20;
-      }
-      return;
+      player.computerAttackStrategy = 20;
     }
     if (player.computerAttackStrategy === 3) {
-      if(player.y === PLAYER_TOUCHING_GROUND_Y_COORD) {
-        userInput.xDirection = 1;
-        userInput.yDirection = -1;
+      if(killingAttack.found === 1) {
+        userInput.xDirection = killingAttack.x;
+        userInput.yDirection = killingAttack.y;
         userInput.powerHit = 1;
         player.computerAttackStrategy = 0;
+      } else {
+        userInput.yDirection = -1;
+        if(player.holdingFrame < 40) {
+          player.computerAttackStrategy = 2;
+        }
       }
       return;
     }
@@ -965,16 +929,16 @@ function letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput)
     if(player.computerAttackStrategy >= 20 && player.computerAttackStrategy < 50) {
       userInput.yDirection = -1;
       player.computerAttackStrategy += 1;
-      if(player.y < PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y && theOtherPlayer.x - player.x < PLAYER_HALF_LENGTH_X * 10 && diff >= 2) {
+      if(player.y < PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y && theOtherPlayer.x - player.x < PLAYER_HALF_LENGTH_X * 10) {
         player.computerAttackStrategy = 50;
       }
-      if(player.y < PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y && Math.abs(player.y - theOtherPlayer.y) < PLAYER_HALF_LENGTH_Y && theOtherPlayer.x < GROUND_HALF_WIDTH * 5 / 3 && rand() % 3 == 0 && diff >= 2) {
+      if(player.y < PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y && Math.abs(player.y - theOtherPlayer.y) < PLAYER_HALF_LENGTH_Y && theOtherPlayer.x < GROUND_HALF_WIDTH * 5 / 3 && rand() % 3 == 0) {
         player.computerAttackStrategy = 50;
       }
       return;
     }
     if(player.computerAttackStrategy === 50) {
-      if(theOtherPlayer.x - player.x < PLAYER_HALF_LENGTH_X * 10 && diff >= 1) {
+      if(theOtherPlayer.x - player.x < PLAYER_HALF_LENGTH_X * 10) {
         if(player.y > PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 4 && theOtherPlayer.x - player.x > PLAYER_HALF_LENGTH_X * 7) {
           userInput.yDirection = -1;
           return;
@@ -1040,76 +1004,105 @@ function letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput)
   }
 
   if (decideCatch(ball, player)) {
-    userInput.powerHit = 1;
-    return;
+    player.computerCatching = 1;
+  } else {
+    player.computerCatching = 0;
   }
 
+  if(theOtherPlayer.holding) {
+    player.computerCatchFrame = 40;
+  }
   let virtualExpectedLandingPointX = ball.expectedLandingPointX;
   if (ball.thrower === 2) {
-    /*if(rand() % 10 < 7 - diff * 3) {
-      return;
-    }*/
-    let lowBall = ball.punchEffectY > PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 2.5 && ball.y > BALL_TOUCHING_GROUND_Y_COORD / 2 && Math.abs(ball.yVelocity) < 10;
-    if(theOtherPlayer.x > GROUND_HALF_WIDTH * 3 / 2 && player.x < GROUND_HALF_WIDTH / 2 && ball.punchEffectY > PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 6 && Math.abs(ball.yVelocity) < 10) {
-      lowBall = true;
+    if(player.computerWillCatch === -1) {
+      if(rand() % 10 < 10 - player.computerShyness) {
+        player.computerWillCatch = 1;
+        player.computerCatchFrame = 40;
+      } else {
+        player.computerWillCatch = 0;
+      }
     }
-    if(theOtherPlayer.x < GROUND_HALF_WIDTH * 4 / 3 && diff <= 2 && rand() % (diff * 3 + 4) === 0) {
-      lowBall = !lowBall;
+    if(player.computerCatchFrame >= 0) {
+      player.computerCatchFrame -= 1;
     }
-    //console.log(parseInt(player.x / GROUND_HALF_WIDTH * 3), parseInt(virtualExpectedLandingPointX / GROUND_HALF_WIDTH * 3));
-    switch (parseInt(virtualExpectedLandingPointX / GROUND_HALF_WIDTH * 3)) {
-      case 0:
-        if(lowBall) {
-          userInput.xDirection = -1;
-          userInput.yDirection = -1;
-        } else {
-          if (player.x < GROUND_HALF_WIDTH / 3) {
-            userInput.xDirection = 1;
-            userInput.powerHit = 1;
-          } else if (player.x < GROUND_HALF_WIDTH * 2 / 3) {
-            userInput.xDirection = 1;
-          }
-        }
-        break;
-      case 1:
-        if(lowBall && player.x > GROUND_HALF_WIDTH / 3) {
-          userInput.xDirection = -1;
-          userInput.yDirection = -1;
-        } else {
-          if (player.x < GROUND_HALF_WIDTH / 3) {
-            if(!lowBall && ball.punchEffectY > PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 4.5) {
-              userInput.xDirection = 1;
-              userInput.powerHit = 1;
-            } else {
-              userInput.xDirection = -1;
-            }
-          } else if (player.x < GROUND_HALF_WIDTH * 2 / 3) {
-            if(lowBall || (virtualExpectedLandingPointX > GROUND_HALF_WIDTH / 2 && ball.yVelocity > 20)) {
-              userInput.xDirection = -1;
-            } else {
-              userInput.xDirection = 1;
-            }
-            userInput.powerHit = 1;
-          } else {
-            userInput.xDirection = 1;
-          }
-        }
-        break;
-      case 2:
-        if (player.x > GROUND_HALF_WIDTH * 2 / 3) {
+    if(player.computerCatchFrame === -1) {
+      player.computerWillCatch = 0;
+    }
+
+    if(player.computerWillCatch === 0) {
+      let lowBall = ball.punchEffectY > PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 2.5 && ball.y > BALL_TOUCHING_GROUND_Y_COORD / 2 && Math.abs(ball.yVelocity) < 10;
+      if(theOtherPlayer.x > GROUND_HALF_WIDTH * 3 / 2 && player.x < GROUND_HALF_WIDTH / 2 && ball.punchEffectY > PLAYER_TOUCHING_GROUND_Y_COORD - PLAYER_HALF_LENGTH_Y * 6 && Math.abs(ball.yVelocity) < 10) {
+        lowBall = true;
+      }
+      switch (parseInt(virtualExpectedLandingPointX / GROUND_HALF_WIDTH * 3)) {
+        case 0:
           if(lowBall) {
             userInput.xDirection = -1;
             userInput.yDirection = -1;
           } else {
-            userInput.xDirection = -1;
-            userInput.powerHit = 1;
+            if (player.x < GROUND_HALF_WIDTH * 2 / 3 && player.y < PLAYER_TOUCHING_GROUND_Y_COORD * 2 / 3) {
+              userInput.xDirection = -1;
+            } else {
+              if (player.x < GROUND_HALF_WIDTH / 3) {
+                userInput.xDirection = 1;
+                userInput.powerHit = 1;
+              } else if (player.x < GROUND_HALF_WIDTH * 2 / 3) {
+                userInput.xDirection = 1;
+              }
+            }
           }
-        } else if (player.x > GROUND_HALF_WIDTH / 3) {
+          break;
+        case 1:
+          if(lowBall && player.x > GROUND_HALF_WIDTH / 3) {
+            userInput.xDirection = -1;
+            userInput.yDirection = -1;
+          } else {
+            if (player.x < GROUND_HALF_WIDTH / 3) {
+              userInput.xDirection = -1;
+            } else if (player.x < GROUND_HALF_WIDTH * 2 / 3) {
+              if(lowBall || (virtualExpectedLandingPointX > GROUND_HALF_WIDTH / 2 && ball.yVelocity > 20)) {
+                userInput.xDirection = -1;
+              } else {
+                userInput.xDirection = 1;
+              }
+              userInput.powerHit = 1;
+            } else {
+              userInput.xDirection = 1;
+            }
+          }
+          break;
+        case 2:
+          if (player.x > GROUND_HALF_WIDTH * 2 / 3) {
+            if(lowBall) {
+              userInput.xDirection = -1;
+              userInput.yDirection = -1;
+            } else {
+              userInput.xDirection = -1;
+              userInput.powerHit = 1;
+            }
+          } else if (player.x > GROUND_HALF_WIDTH / 3) {
+            userInput.xDirection = -1;
+          }
+          break;
+        default:
+          if (Math.abs(player.computerWhereToStandBy - player.x) > 12) {
+            if (player.x < player.computerWhereToStandBy) {
+              userInput.xDirection = 1;
+            } else {
+              userInput.xDirection = -1;
+            }
+          }
+          break;
+      }
+    } else {
+      if (Math.abs(ball.x - player.x) > 12) {
+        if (player.x < ball.x) {
+          userInput.xDirection = 1;
+        } else {
           userInput.xDirection = -1;
         }
-        break;
-      default:
-        break;
+      }
+      userInput.yDirection = -1;
     }
   } else if (ball.thrower === 0) {
     if (ball.x > GROUND_HALF_WIDTH) {
@@ -1120,23 +1113,14 @@ function letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput)
           userInput.xDirection = -1;
         }
       }
-      if(theOtherPlayer.holding && player.y < PLAYER_TOUCHING_GROUND_Y_COORD && diff <= 2) {
-        userInput.yDirection = 1;
-      }
-      if(rand() % 10 < 4 - diff) {
+      if(rand() % 10 < 2) {
         player.computerWhereToStandBy = GROUND_HALF_WIDTH / 3 + rand() % 61 - 30;
-        if(diff <= 1) {
-          player.computerWhereToStandBy = GROUND_HALF_WIDTH / 3 + rand() % 121 - 60;
-        }
       }
       if(player.x < GROUND_HALF_WIDTH / 4) {
         player.computerWhereToStandBy = GROUND_HALF_WIDTH / 3 + 20;
       }
     } else {
       let targetX = virtualExpectedLandingPointX;
-      if(diff <= 1) {
-        targetX += rand() % 51 - 25;
-      }
       if(targetX > GROUND_HALF_WIDTH) {
         targetX = ball.x;
         if(ball.x > GROUND_HALF_WIDTH * 2 / 3 && player.x < GROUND_HALF_WIDTH * 2 / 3) {
@@ -1150,14 +1134,12 @@ function letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput)
           userInput.xDirection = -1;
         }
       }
-      if (ball.yVelocity > -8 && Math.abs(ball.y - player.y) > PLAYER_HALF_LENGTH_Y * 2 && !(ball.xVelocity > 0 && ball.x > player.x) && diff >= 1) {
+      if (ball.yVelocity > -8 && Math.abs(ball.y - player.y) > PLAYER_HALF_LENGTH_Y * 2 && !(ball.xVelocity > 0 && ball.x > player.x)) {
         if (player.y < ball.y) {
           userInput.yDirection = 1;
-        } else {
-          //userInput.yDirection = -1;
         }
       }
-      if(ball.punchEffectX < player.x && ball.x < player.x && ball.yVelocity < 0 && ball.yVelocity > -15 && ball.y > BALL_TOUCHING_GROUND_Y_COORD / 2 && diff >= 1) {
+      if(ball.punchEffectX < player.x && ball.x < player.x && ball.yVelocity < 0 && ball.yVelocity > -15 && ball.y > BALL_TOUCHING_GROUND_Y_COORD / 2) {
         userInput.xDirection = -1;
         if(ball.y > player.y + PLAYER_HALF_LENGTH_Y * 2) {
           userInput.xDirection = 1;
@@ -1171,34 +1153,126 @@ function letComputerDecideUserInputHard(player, theOtherPlayer, ball, userInput)
 }
 
 function decideCatch(ball, player) {
-  const diff = player.computerDifficulty;
   let playerX = player.x;
   let playerY = player.y;
   playerX = playerX > GROUND_HALF_WIDTH ? playerX - 8 : playerX + 8
   playerY = playerY + 4
 
-  let diffX = Math.abs(playerX - ball.x)
-  let diffY = Math.abs(playerY - ball.y)
-
-  if ((diffX - PLAYER_HALF_LENGTH_X) ** 2 + (diffY - PLAYER_HALF_LENGTH_Y) ** 2 > BALL_RADIUS ** 2 * 3) {
-    return false;
-  }
-  if ((!player.isPlayer2 && ball.thrower !== 2) || (player.isPlayer2 && ball.thrower !== 1)) {
-    return true;
-  }
-
   let v = ball.xVelocity ** 2 + ball.yVelocity ** 2;
   if (v > 1000) {
-    if(diff >= 3 && rand() % 10 < 3) {
+    if(rand() % 10 < 1) {
       return true;
     }
     return false;
   }
-  if(v > 401 && rand() % 10 < 9 - 2.5 * diff) {
-    return false;
-  }
-  if(rand() % 10 < 6 - 2 * diff) {
-    return false;
+  if(v > 401) {
+    if(player.computerWillCatch === 0 && rand() % 10 < 4 + player.computerCatchCount * 1) {
+      return false;
+    }
+    if(player.computerWillCatch === 1) {
+      if(rand() % 10 < Math.min(1 + player.computerCatchCount * 1.5, 7)) {
+        return false;
+      }
+    }
   }
   return true;
+}
+
+function findKillingAttack(ball, player) {
+  let attack = {found: 0, x: 0, y: 0};
+  const copyPlayer = {
+    x: player.x,
+    y: player.y,
+    xVelocity: 0,
+    yVelocity: player.yVelocity,
+  };
+  if(rand() % 10 < 2) {
+    copyPlayer.yVelocity = 12;
+  }
+  for (let y = -1; y <= 1; y++) {
+    const copyBall = {
+      x: ball.x,
+      y: ball.y,
+      xVelocity: 20,
+      yVelocity: y * 30,
+    };
+    if (isKillingAttack(copyBall, copyPlayer) && player.state !== 3) {
+      attack.found = 1;
+      attack.x = 1;
+      attack.y = y;
+      return attack;
+    }
+  }
+  return attack;
+}
+
+function isKillingAttack(ball, player, boldness = -1) {
+  const copyPlayer = {
+    x: player.x,
+    y: player.y,
+    xVelocity: player.xVelocity,
+    yVelocity: player.yVelocity,
+  };
+  const copyBall = {
+    x: ball.x,
+    y: ball.y,
+    xVelocity: ball.xVelocity,
+    yVelocity: ball.yVelocity,
+  };
+  while (true) {
+    if(copyBall.x < copyPlayer.x) {
+      copyPlayer.xVelocity = -1 * boldness;
+    } else {
+      copyPlayer.xVelocity = 1 * boldness;
+    }
+    const futureCopyPlayerX = copyPlayer.x + copyPlayer.xVelocity;
+    copyPlayer.x = futureCopyPlayerX;
+    //copyPlayer is player2
+    if (futureCopyPlayerX < GROUND_HALF_WIDTH + PLAYER_HALF_LENGTH) {
+      copyPlayer.x = GROUND_HALF_WIDTH + PLAYER_HALF_LENGTH;
+    } else if (futureCopyPlayerX > GROUND_WIDTH - PLAYER_HALF_LENGTH) {
+      copyPlayer.x = GROUND_WIDTH - PLAYER_HALF_LENGTH;
+    }
+
+    const futureCopyPlayerY = copyPlayer.y + copyPlayer.yVelocity;
+    copyPlayer.y = futureCopyPlayerY;
+    if (futureCopyPlayerY < PLAYER_TOUCHING_GROUND_Y_COORD) {
+      copyPlayer.yVelocity += 1;
+    } else if (futureCopyPlayerY > PLAYER_TOUCHING_GROUND_Y_COORD) {
+      // if player is landing..
+      copyPlayer.yVelocity = 0;
+      copyPlayer.y = PLAYER_TOUCHING_GROUND_Y_COORD;
+    }
+
+    const futureCopyBallX = copyBall.xVelocity + copyBall.x;
+    if (futureCopyBallX < BALL_RADIUS || futureCopyBallX > GROUND_WIDTH - BALL_RADIUS) {
+      copyBall.xVelocity = -copyBall.xVelocity * 0.6;
+    }
+    if (copyBall.y + copyBall.yVelocity < 0) {
+      break;
+    }
+
+    copyBall.y = copyBall.y + copyBall.yVelocity;
+    // if copyBall would touch ground
+    if (copyBall.y > BALL_TOUCHING_GROUND_Y_COORD) {
+      break;
+    }
+    copyBall.x = copyBall.x + copyBall.xVelocity;
+    copyBall.yVelocity += 1;
+
+    let playerX = copyPlayer.x - 8;
+    let playerY = copyPlayer.y + 4;
+
+    let diffX = Math.abs(playerX - copyBall.x);
+    let diffY = Math.abs(playerY - copyBall.y);
+
+    if (diffX > PLAYER_HALF_LENGTH_X + BALL_RADIUS) continue;
+    if (diffY > PLAYER_HALF_LENGTH_Y + BALL_RADIUS) continue;
+
+    if (diffX <= PLAYER_HALF_LENGTH_X) return true;
+    if (diffY <= PLAYER_HALF_LENGTH_Y) return true;
+
+    return ((diffX - PLAYER_HALF_LENGTH_X) ** 2 + (diffY - PLAYER_HALF_LENGTH_Y) ** 2) / (BALL_RADIUS ** 2) < 0.8;
+  }
+  return false;
 }

@@ -231,8 +231,10 @@ export class PikachuVolleyball {
         this.physics.player2.isComputer = false;
       } else {
         if (this.keyboardArray[0].powerHit === 1) {
-          this.physics.player1.isComputer = false;
-          this.physics.player2.isComputer = true;
+          //this.physics.player1.isComputer = false;
+          //this.physics.player2.isComputer = true;
+          this.physics.player1.isComputer = true;
+          this.physics.player2.isComputer = false;
         } else if (this.keyboardArray[1].powerHit === 1) {
           this.physics.player1.isComputer = true;
           this.physics.player2.isComputer = false;
